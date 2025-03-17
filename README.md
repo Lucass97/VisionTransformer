@@ -2,6 +2,8 @@
 This repository provides an implementation of the Vision Transformer (ViT) from scratch. ViT is a deep learning model designed for image recognition tasks, leveraging self-attention mechanisms to process images efficiently. This project is a personal initiative aimed at gaining a deeper understanding of transformer models in the context of computer vision. It is built with the intention to explore and experiment with the architecture of ViT, and offers a modular and extensible implementation for further research and learning.
 
 ## Table of Contents
+- [Overview](#overview)
+- [Table of Contents](#table-of-contents)
 - [Architecture](#architecture)
   - [Components](#components)
 - [Requirements](#requirements)
@@ -83,7 +85,7 @@ device: "cuda:0"
 data:
   name: 'MNIST'
   class_path: 'dataset.mnist_dataset.MNISTDataset'
-  base_path: "dataset/mnist"
+  base_path: "dataset/data"
   img_height: 28
   img_width: 28
   n_channels: 1
@@ -98,13 +100,17 @@ model:
   num_encoders: 3
   dropout: 0.1
 
+model_checkpoint:
+  base_path: './experiments'
+  save_freq: 1
+
 training:
   epochs: 20
   lr: 0.001
   batch_size: 16
 
 logger:
-  base_path: './logs'
+  base_path: './experiments'
   step: 100
   max_grid_dim: 16
 ```
