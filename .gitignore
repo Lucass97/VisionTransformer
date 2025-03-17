@@ -30,11 +30,14 @@ venv/
 *.pth
 *.ckpt
 
-# Logs (exclude content inside the logs directory, but keep the directory itself)
-logs/*
+# Experiments (exclude content inside the experiments directory, but keep the directory itself)
+experiments/*
 
 # Dataset/Data (exclude content inside the dataset/data directory, but keep the directory itself)
 dataset/data/*
+
+# Exclude configs folder
+!configs/*
 
 # Logs
 *.log
