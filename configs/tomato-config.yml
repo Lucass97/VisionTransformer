@@ -27,6 +27,6 @@ training:
   batch_size: 4
 
 logger:
-  base_path: './logs'
+  base_path: './experiments'
   step: 100
   max_grid_dim: 16
