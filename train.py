@@ -17,13 +17,16 @@ def main() -> None:
     if not os.path.exists(args.config):
         raise FileNotFoundError(
             f"The configuration file '{args.config}' does not exist!")
+    
+    if args.weights and not os.path.exists(args.weights):
+        LOGGER.warning(f"Il percorso dei pesi non esiste: {args.weights}")
 
     configs, experiment_name = load_config(args.config, args.experiment_name)
 
     LOGGER.info(f"Experiment: {experiment_name}")
     print_config(configs)
 
-    trainer = Trainer(configs, experiment_name)
+    trainer = Trainer(configs, args.weights)
 
     trainer.train()
 
