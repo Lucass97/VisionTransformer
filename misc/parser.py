@@ -2,7 +2,7 @@ import argparse
 
 
 def get_train_args() -> argparse.Namespace:
-
+    
     parser = argparse.ArgumentParser(
         description="Trainer script"
     )
@@ -20,6 +20,13 @@ def get_train_args() -> argparse.Namespace:
         type=str,
         required=False,
         help="The name of the experiment for logging or saving results"
+    )
+    
+    parser.add_argument(
+        "--weights",
+        type=str,
+        required=False,
+        help="Path to the pre-trained model weights file"
     )
 
     return parser.parse_args()
