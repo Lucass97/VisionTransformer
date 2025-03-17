@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual Environment
+env/
+venv/
+*.env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Conda
+*.conda
+*.env
+*.yml
+
+# TensorFlow/PyTorch models (if you save them in the project)
+*.h5
+*.pb
+*.pth
+*.ckpt
+
+# Logs (exclude content inside the logs directory, but keep the directory itself)
+logs/*
+
+# Dataset/Data (exclude content inside the dataset/data directory, but keep the directory itself)
+dataset/data/*
+
+# Logs
+*.log
+
+# Data files
+*.csv
+*.tsv
+*.json
+*.parquet
+*.pickle
+
+# System Files (OS specific)
+.DS_Store
+Thumbs.db

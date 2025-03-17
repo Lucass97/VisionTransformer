@@ -1,0 +1,76 @@
+import os
+import yaml
+from pydantic import BaseModel, Field
+
+from misc.utils.generic_utility import generate_experiment_name
+
+
+class DataConfig(BaseModel):
+    name: str
+    class_path: str
+    base_path: str
+    img_height: int = Field(..., gt=0)
+    img_width: int = Field(..., gt=0)
+    n_channels: int = Field(..., ge=1)
+    num_classes: int = Field(..., ge=2)
+
+
+class ModelConfig(BaseModel):
+    cnn_backbone: bool
+    cnn_out_channels: int = Field(..., gt=0)
+    patch_size: int = Field(..., gt=0)
+    latent_size: int = Field(..., gt=0)
+    num_heads: int = Field(..., gt=0)
+    num_encoders: int = Field(..., gt=0)
+    dropout: float = Field(..., ge=0.0, le=1.0)
+
+
+class TrainingConfig(BaseModel):
+    epochs: int = Field(..., gt=0)
+    lr: float = Field(..., gt=0.0)
+    batch_size: int = Field(..., gt=0)
+
+
+class LoggerConfig(BaseModel):
+    base_path: str
+    step: int = Field(..., gt=0)
+    max_grid_dim: int = Field(..., gt=0)
+
+
+class Config(BaseModel):
+    device: str
+    data: DataConfig
+    model: ModelConfig
+    training: TrainingConfig
+    logger: LoggerConfig
+
+
+def load_config(yaml_path: str, experiment_name: str) -> tuple[Config, str]:
+    """
+    Loads a YAML configuration file and validates it using Pydantic.
+
+    Args:
+        yaml_path (str): Path to the YAML configuration file.
+        experiment_name (str): Name of the experiment. If not provided, it is generated automatically.
+
+    Returns:
+        tuple[Config, str]: The validated configuration object and the experiment name.
+
+    Raises:
+        FileNotFoundError: If the configuration file does not exist.
+    """
+
+    if not os.path.exists(yaml_path):
+        raise FileNotFoundError(
+            f"The configuration file '{yaml_path}' does not exist!")
+
+    with open(yaml_path, 'r') as file:
+        params = yaml.safe_load(file)
+
+    config = Config(**params)
+
+    # If the experiment name is not provided, generate one based on the dataset name and timestamp
+    experiment_name = experiment_name if experiment_name else generate_experiment_name(
+        config.data.name)
+
+    return config, experiment_name
