@@ -63,12 +63,16 @@ The model includes functionality to visualize attention maps, offering insights 
 To train the model, use the following command:
 
 ```sh
-python3 train.py [-h] --config CONFIG [--experiment-name EXPERIMENT_NAME]
+python3 train.py [-h] 
+        --config CONFIG
+        [--experiment-name EXPERIMENT_NAME
+        [--weights WEIGHTS]
 ```
 
 Where:
 - **`--config CONFIG`**: Specifies the path to the YAML configuration file containing the training parameters.
 - **`--experiment-name EXPERIMENT_NAME`**: Defines the name of the experiment, which is used for logging and saving results.
+- **`--weights WEIGHTS`**: Path to the pre-trained model weights file
 
 ### Configuration
 The training process is governed by a YAML configuration file, located in the [`configs/`](configs/) directory. An example configuration is shown below:
