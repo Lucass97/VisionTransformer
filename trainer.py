@@ -95,7 +95,7 @@ class Trainer:
             self.optimizer.step()
 
             # Logging training progress
-            self.tensorboard_writer.loop_log(progress_bar, len(self.train_loader), epoch, batch_idx, inputs, labels, preds, probs, attn_maps, loss)
+            self.tensorboard_writer.loop_train_log(progress_bar, len(self.train_loader), epoch, batch_idx, inputs, labels, preds, probs, attn_maps, loss)
             progress_bar.update(1)
 
         progress_bar.close()
@@ -118,6 +118,8 @@ class Trainer:
             for batch_idx, (inputs, labels) in enumerate(self.test_loader):
                 inputs, labels = inputs.to(self.cfg.device), labels.to(self.cfg.device)
 
+                n_channels, img_height, img_width = inputs.shape[1], inputs.shape[2], inputs.shape[3]
+
                 if self.cnn_backbone:
                     inputs = self.cnn_backbone(inputs)
 
@@ -128,11 +130,15 @@ class Trainer:
                 probs = F.softmax(outputs, dim=-1)
                 preds = torch.argmax(probs, dim=-1)
 
+                # Attention maps processing
+                attn_maps = self.model.get_attention_weights()
+                attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps[1], (img_height, img_width), n_channels, self.cfg.model.patch_size)
+
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)
 
                 # Logging validation progress
-                self.tensorboard_writer.loop_log(progress_bar, len(self.test_loader), epoch, batch_idx, inputs, labels, preds, probs, loss)
+                self.tensorboard_writer.loop_val_log(progress_bar, len(self.test_loader), epoch, batch_idx, inputs, labels, preds, probs, attn_maps, loss)
                 progress_bar.update(1)
 
         avg_loss = running_val_loss / total
