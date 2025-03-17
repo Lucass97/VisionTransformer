@@ -1,0 +1,8 @@
+name: CV-Transformer
+channels:
+  - defaults
+dependencies:
+  - python=3.12.9
+  - pip=25
+  - pip:
+    - -r file:requirements.txt

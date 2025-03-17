@@ -30,6 +30,9 @@ class TrainingConfig(BaseModel):
     lr: float = Field(..., gt=0.0)
     batch_size: int = Field(..., gt=0)
 
+class ModelCheckpoint(BaseModel):
+    base_path: str
+    save_freq: int
 
 class LoggerConfig(BaseModel):
     base_path: str
@@ -41,6 +44,7 @@ class Config(BaseModel):
     device: str
     data: DataConfig
     model: ModelConfig
+    model_checkpoint: ModelCheckpoint
     training: TrainingConfig
     logger: LoggerConfig
 
@@ -67,10 +71,13 @@ def load_config(yaml_path: str, experiment_name: str) -> tuple[Config, str]:
     with open(yaml_path, 'r') as file:
         params = yaml.safe_load(file)
 
-    config = Config(**params)
+    cfg = Config(**params)
 
     # If the experiment name is not provided, generate one based on the dataset name and timestamp
     experiment_name = experiment_name if experiment_name else generate_experiment_name(
-        config.data.name)
+        cfg.data.name)
+    
+    cfg.model_checkpoint.base_path = os.path.join(cfg.model_checkpoint.base_path, experiment_name)
+    cfg.logger.base_path = os.path.join(cfg.logger.base_path, experiment_name)
 
-    return config, experiment_name
+    return cfg, experiment_name

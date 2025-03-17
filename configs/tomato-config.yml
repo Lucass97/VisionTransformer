@@ -1,0 +1,32 @@
+device: "cuda:0"
+
+data:
+  class_path: 'dataset.tomato_dataset.TomatoDataset'
+  base_path: "dataset/data/tomato"
+  img_height: 224
+  img_width: 224
+  n_channels: 3
+  num_classes: 10
+
+model:
+  cnn_backbone: False
+  cnn_out_channels: 32
+  patch_size: 6
+  latent_size: 480
+  num_heads: 12
+  num_encoders: 6
+  dropout: 0.1
+
+model_checkpoint:
+  base_path: './experiments'
+  save_freq: 1
+
+training:
+  epochs: 20
+  lr: 0.001
+  batch_size: 4
+
+logger:
+  base_path: './experiments'
+  step: 100
+  max_grid_dim: 16

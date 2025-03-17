@@ -1,0 +1,33 @@
+device: "cuda:0"
+
+data:
+  name: 'MNIST'
+  class_path: 'dataset.mnist_dataset.MNISTDataset'
+  base_path: "dataset/data"
+  img_height: 28
+  img_width: 28
+  n_channels: 1
+  num_classes: 10
+
+model:
+  cnn_backbone: False
+  cnn_out_channels: 32
+  patch_size: 2
+  latent_size: 120
+  num_heads: 12
+  num_encoders: 3
+  dropout: 0.1
+
+model_checkpoint:
+  base_path: './experiments'
+  save_freq: 1
+
+training:
+  epochs: 20
+  lr: 0.001
+  batch_size: 16
+
+logger:
+  base_path: './experiments'
+  step: 100
+  max_grid_dim: 16
