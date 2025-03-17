@@ -144,7 +144,7 @@ class Trainer:
     def train(self) -> None:
         """
         Runs the training loop for the specified number of epochs and validates the model 
-        at the end of each epoch.
+        at the end of each epoch. Saves the model even if training is interrupted.
         """
 
         if self.weights_path:
@@ -153,16 +153,26 @@ class Trainer:
                 self.model.load_state_dict(torch.load(self.weights_path))
             else:
                 self.LOGGER.warning(f"Model weights file {self.weights_path} not found. Starting from scratch.")
-        
-        for epoch in range(1, self.cfg.training.epochs + 1):
-            self.LOGGER.info(f"Starting epoch {epoch}/{self.cfg.training.epochs}")
-            
-            self.train_epoch(epoch)
 
-            # self.validate_epoch(epoch)
+        try:
+            for epoch in range(1, self.cfg.training.epochs + 1):
+                self.LOGGER.info(f"Starting epoch {epoch}/{self.cfg.training.epochs}")
+                
+                self.train_epoch(epoch)
+                self.validate_epoch(epoch)
+
+                if epoch % self.cfg.model_checkpoint.save_freq == 0:
+                    model_save_path = os.path.join(self.cfg.model_checkpoint.base_path, f"model_epoch_{epoch}.pt")
+                    torch.save(self.model.state_dict(), model_save_path)
+                    self.LOGGER.info(f"Model weights saved to {model_save_path}")
+
+        except KeyboardInterrupt:
+            self.LOGGER.warning("Training interrupted by user! Saving model before exiting...")
+            interrupt_save_path = os.path.join(self.cfg.model_checkpoint.base_path, f"model_epoch{epoch}_interrupted.pt")
+            torch.save(self.model.state_dict(), interrupt_save_path)
+            self.LOGGER.info(f"Model weights saved to {interrupt_save_path}")
+            return
             
-            # Salvataggio weights
-            if epoch % self.cfg.model_checkpoint.save_freq == 0:
-                model_save_path = os.path.join(self.cfg.model_checkpoint.base_path, f"model_epoch_{epoch}.pt")
-                torch.save(self.model.state_dict(), model_save_path)
-                self.LOGGER.info(f"Model weights saved to {model_save_path}")
+        final_model_path = os.path.join(self.cfg.model_checkpoint.base_path, "model_final.pt")
+        torch.save(self.model.state_dict(), final_model_path)
+        self.LOGGER.info(f"Final model weights saved to {final_model_path}")
