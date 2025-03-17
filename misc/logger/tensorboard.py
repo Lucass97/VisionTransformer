@@ -4,20 +4,18 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class TensorboardLogger:
-    def __init__(self, log_dir: str, experiment_name: str, step: int = 100, max_grid_dim: int = 16) -> None:
+    def __init__(self, log_dir: str, step: int = 100, max_grid_dim: int = 16) -> None:
         """
         Initializes the TensorBoard logger.
 
         Args:
             log_dir (str): Directory to save TensorBoard logs.
-            experiment_name (str): Experiment name used in the log directory.
             train_dim (int): Number of batches per epoch.
             step (int): Interval (in batches) to log metrics (default is 100).
             max_grid_dim (int): Maximum number of images to log per batch (default is 16).
         """
-        log_dir = os.path.join(log_dir, experiment_name)
+        log_dir = log_dir
         self.writer = SummaryWriter(log_dir=log_dir)
-        self.experiment_name = experiment_name
         self.step = step
         self.max_grid_dim = max_grid_dim
         self.avg_training_loss = 0.0
