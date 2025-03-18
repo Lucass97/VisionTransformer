@@ -1,6 +1,9 @@
 import os
 import pandas as pd
 import sys
+from itertools import islice
+
+from sklearn.preprocessing import LabelEncoder
 
 sys.path.append('../')
 
@@ -14,13 +17,15 @@ class DoodleDatasetSplitter:
     VAL_FILENAME = 'val_doodle_dataframe.csv'
     TEST_FILENAME = 'test_doodle_dataframe.csv'
 
-    def __init__(self, base_path: str, df_filename: str = MASTER_FILENAME, random_state: int = 42) -> None:
+    def __init__(self, base_path: str, df_filename: str = MASTER_FILENAME,
+                 classes: list[str] | int = None, random_state: int = 42) -> None:
         """
         Initializes the DoodleDatasetSplitter.
 
         Parameters:
         - base_path: str, the base directory where the datasets are located.
         - df_filename: str, the name of the master CSV file (default: 'master_doodle_dataframe.csv').
+        - classes: list[str] | int, a list of class names to filter by or an integer representing the number of classes to include (default: None).
         - random_state: int, the random seed used for reproducibility (default: 42).
         """
         master_path = os.path.join(base_path, df_filename)
@@ -31,7 +36,22 @@ class DoodleDatasetSplitter:
         self.test_path = os.path.join(base_path, self.TEST_FILENAME)
 
         self.random_state = random_state
+
         LOGGER.info(f"Initialized DoodleDatasetSplitter with base path: {base_path}")
+
+        # Classes filtering
+        if isinstance(classes, int):
+            LOGGER.info(f"Filtered by first {classes} classes.")
+            grouped = self.master.groupby('word')
+            self.master = pd.concat(islice((group for _, group in grouped), 2))
+        if isinstance(classes, list):
+            self.master = self.master[self.master['word'].isin(classes)]
+            LOGGER.info(f"Filtered by the following classes: {classes}")
+
+        le_word = LabelEncoder()
+        self.master['label'] = le_word.fit_transform(self.master['word'])
+        LOGGER.info(f"Label encoding completed.")
+
 
     def split_dataset(self, train_ratio: float, val_ratio: float) -> None:
         """
@@ -75,7 +95,12 @@ def main() -> None:
     """
     args = get_doodle_dataset_splitter_args(DoodleDatasetSplitter.MASTER_FILENAME)
 
-    splitter = DoodleDatasetSplitter(args.base_path, args.master_csv_name, args.random_state)
+    classes_param = args.classes
+
+    if classes_param is None:
+        classes_param = args.n_classes
+
+    splitter = DoodleDatasetSplitter(args.base_path, args.master_csv_name, classes_param, args.random_state)
 
     splitter.split_dataset(args.train_ratio, args.val_ratio)
 

@@ -59,6 +59,23 @@ def get_doodle_dataset_splitter_args(default_master_filename: str) -> argparse.N
     )
 
     parser.add_argument(
+        "--classes",
+        type=str,
+        nargs='+',
+        required=False,
+        default=None,
+        help="A list of class names to filter by."
+    )
+
+    parser.add_argument(
+        "--n-classes",
+        type=int,
+        required=False,
+        default=None,
+        help="The number of classes to include in the dataset (default: None)."
+    )
+
+    parser.add_argument(
         "--train-ratio",
         type=float,
         required=False,
