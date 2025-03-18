@@ -33,12 +33,12 @@ def calculate_cnn_output_dims(cnn_backbone, n_channels: int, img_height: int, im
     return output.shape[1], output.shape[2], output.shape[3]
 
 
-def reconstruct_attn_from_patches(attn_map, img_size, n_channels, patch_size):
+def reconstruct_attn_from_patches(attn_maps, img_size, n_channels, patch_size):
     """
     This function reconstructs an attention map into an image-compatible tensor.
     
     Parameters:
-    attn_map (Tensor): The attention tensor with shape (batch, num_tokens, num_tokens).
+    attn_maps (Tensor): The attention tensor with shape (batch, num_tokens, num_tokens).
     img_size (tuple): A tuple (height, width) representing the original image dimensions.
     n_channels (int): The number of channels in the image.
     patch_size (int): The size of each patch used during tokenization.
@@ -46,6 +46,8 @@ def reconstruct_attn_from_patches(attn_map, img_size, n_channels, patch_size):
     Returns:
     Tensor: The processed attention map resized to match the original image dimensions.
     """
+    last_layer = list(attn_maps.keys())[-1]
+    attn_map = attn_maps[last_layer]
     attn_map = attn_map.clone().detach()
     batch_size, num_tokens, _ = attn_map.shape
     grid_height, grid_width = img_size[0] // patch_size, img_size[1] // patch_size
