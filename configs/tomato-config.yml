@@ -24,6 +24,7 @@ model_checkpoint:
 training:
   epochs: 20
   lr: 0.001
+  weight_decay: 0.0
   batch_size: 4
 
 logger:
