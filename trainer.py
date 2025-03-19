@@ -13,9 +13,9 @@ from misc.utils.model_utility import calculate_cnn_output_dims, reconstruct_attn
 
 from dataset.datasets import create_dataset_instance
 
-from models.components.components import CNNBackbone
-from models.components.embedder import InputEmbedding
-from models.models import ViT
+from models.backbones import CNNBackbone
+from models.vit.embedder import InputEmbedding
+from models.vit.vit import ViT
 
 
 class Trainer:

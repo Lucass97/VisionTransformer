@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from models.components.blocks import EncoderBlock
+from models.vit.components import EncoderBlock
 
 
 class ViT(nn.Module):
