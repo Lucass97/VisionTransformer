@@ -50,6 +50,6 @@ def build_model(cfg):
     
     else:
         LOGGER.error(f"Invalid model type '{cfg.model.type}'. Valid options are 'vit' or 'resnet'.")
-        return None
+        exit()
     
     return model
