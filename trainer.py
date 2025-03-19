@@ -13,9 +13,7 @@ from misc.utils.model_utility import calculate_cnn_output_dims, reconstruct_attn
 
 from dataset.datasets import create_dataset_instance
 
-from models.backbones import CNNBackbone
-from models.vit.embedder import InputEmbedding
-from models.vit.vit import ViT
+from models.models import build_model
 
 
 class Trainer:
@@ -39,15 +37,7 @@ class Trainer:
         self.train_loader = DataLoader(self.train_set, cfg.training.batch_size, shuffle=True, num_workers=4)
         self.test_loader = DataLoader(self.test_set, cfg.training.batch_size, shuffle=True, num_workers=4)
 
-        # Model components initialization
-        self.cnn_backbone = CNNBackbone(n_channels=cfg.data.n_channels, out_channels=cfg.model.cnn_out_channels).to(cfg.device) if cfg.model.cnn_backbone else None
-
-        n_channels, img_height, img_width = calculate_cnn_output_dims(self.cnn_backbone, cfg.data.n_channels, cfg.data.img_height, cfg.data.img_width)
-
-        input_embedder = InputEmbedding(img_height, img_width, cfg.model.patch_size, n_channels, cfg.model.latent_size).to(cfg.device)
-
-        # Vision Transformer model
-        self.model = ViT(input_embedder, cfg.model.num_encoders, cfg.model.latent_size, cfg.model.num_heads, cfg.data.num_classes, cfg.model.dropout).to(cfg.device)
+        self.model = build_model(cfg)
 
         # Optimizer and loss function
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.training.lr)
@@ -74,30 +64,36 @@ class Trainer:
         progress_bar = tqdm(total=len(self.train_loader), desc=f"Epoch {epoch}/{self.cfg.training.epochs}", position=0, leave=True)
 
         for batch_idx, (inputs, labels) in enumerate(self.train_loader):
+            
             inputs, labels = inputs.to(self.cfg.device), labels.to(self.cfg.device)
 
             n_channels, img_height, img_width = inputs.shape[1], inputs.shape[2], inputs.shape[3]
 
             self.optimizer.zero_grad()
 
-            if self.cnn_backbone:
-                inputs = self.cnn_backbone(inputs)
-
             outputs = self.model(inputs)
             probs = F.softmax(outputs, dim=-1)
             preds = torch.argmax(probs, dim=-1)
 
             # Attention maps processing
-            attn_maps = self.model.get_attention_weights()
-            attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps, (img_height, img_width), n_channels, self.cfg.model.patch_size)
-
+            attn_maps = None
+            if self.cfg.model.type == 'vit':
+                attn_maps = self.model.get_attention_weights()
+                attn_maps = processing(reconstruct_attn_from_patches,
+                                       batch_idx, self.tensorboard_writer.step,
+                                       attn_maps, (img_height, img_width),
+                                       n_channels, self.cfg.model.patch_size)
+            
             # Compute loss and backpropagation
             loss = self.criterion(outputs, labels)
             loss.backward()
             self.optimizer.step()
 
             # Logging training progress
-            self.tensorboard_writer.loop_train_log(progress_bar, len(self.train_loader), epoch, batch_idx, inputs, labels, preds, probs, attn_maps, loss)
+            self.tensorboard_writer.loop_train_log(progress_bar,
+                                                   len(self.train_loader),
+                                                   epoch, batch_idx, inputs,
+                                                   labels, preds, probs, attn_maps, loss)
             progress_bar.update(1)
 
         progress_bar.close()
@@ -124,9 +120,6 @@ class Trainer:
 
                 n_channels, img_height, img_width = inputs.shape[1], inputs.shape[2], inputs.shape[3]
 
-                if self.cnn_backbone:
-                    inputs = self.cnn_backbone(inputs)
-
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
                 running_val_loss += loss.item() * inputs.size(0)
@@ -135,14 +128,22 @@ class Trainer:
                 preds = torch.argmax(probs, dim=-1)
 
                 # Attention maps processing
-                attn_maps = self.model.get_attention_weights()
-                attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps, (img_height, img_width), n_channels, self.cfg.model.patch_size)
+                attn_maps = None
+                if self.cfg.model.type == 'vit':
+                    attn_maps = self.model.get_attention_weights()
+                    attn_maps = processing(reconstruct_attn_from_patches,
+                                           batch_idx, self.tensorboard_writer.step,
+                                           attn_maps, (img_height, img_width),
+                                           n_channels, self.cfg.model.patch_size)
 
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)
 
                 # Logging validation progress
-                self.tensorboard_writer.loop_val_log(progress_bar, len(self.test_loader), epoch, batch_idx, inputs, labels, preds, probs, attn_maps, loss)
+                self.tensorboard_writer.loop_val_log(progress_bar,
+                                                     len(self.test_loader),
+                                                     epoch, batch_idx, inputs, labels,
+                                                     preds, probs, attn_maps, loss)
                 progress_bar.update(1)
 
         avg_loss = running_val_loss / total
