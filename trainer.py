@@ -68,6 +68,8 @@ class Trainer:
         """
         self.model.train()
 
+        self.tensorboard_writer.avg_training_loss = 0.0
+
         # Progress bar for training
         progress_bar = tqdm(total=len(self.train_loader), desc=f"Epoch {epoch}/{self.cfg.training.epochs}", position=0, leave=True)
 
@@ -87,7 +89,7 @@ class Trainer:
 
             # Attention maps processing
             attn_maps = self.model.get_attention_weights()
-            attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps[1], (img_height, img_width), n_channels, self.cfg.model.patch_size)
+            attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps, (img_height, img_width), n_channels, self.cfg.model.patch_size)
 
             # Compute loss and backpropagation
             loss = self.criterion(outputs, labels)
@@ -108,6 +110,8 @@ class Trainer:
             epoch (int): The current epoch number.
         """
         self.model.eval()
+        
+        self.tensorboard_writer.avg_training_loss = 0.0
         running_val_loss = 0.0
         correct = 0
         total = 0
@@ -132,7 +136,7 @@ class Trainer:
 
                 # Attention maps processing
                 attn_maps = self.model.get_attention_weights()
-                attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps[1], (img_height, img_width), n_channels, self.cfg.model.patch_size)
+                attn_maps = processing(reconstruct_attn_from_patches, batch_idx, self.tensorboard_writer.step, attn_maps, (img_height, img_width), n_channels, self.cfg.model.patch_size)
 
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)

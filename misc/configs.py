@@ -28,6 +28,7 @@ class ModelConfig(BaseModel):
 class TrainingConfig(BaseModel):
     epochs: int = Field(..., gt=0)
     lr: float = Field(..., gt=0.0)
+    weight_decay: float
     batch_size: int = Field(..., gt=0)
 
 class ModelCheckpoint(BaseModel):

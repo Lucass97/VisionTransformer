@@ -40,7 +40,9 @@ class ViT(nn.Module):
         self.head = nn.Sequential(
             nn.LayerNorm(latent_size),
             nn.Linear(latent_size, latent_size),
-            nn.Linear(latent_size, num_classes)
+            nn.GELU(),
+            nn.Dropout(dropout), 
+            nn.Linear(latent_size, num_classes),
         )
 
         self.attention_weights = {}

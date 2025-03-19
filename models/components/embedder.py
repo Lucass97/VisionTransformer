@@ -24,7 +24,7 @@ class InputEmbedding(nn.Module):
         super(InputEmbedding, self).__init__()
 
         # Parameters
-        self.img_heigth = img_height
+        self.img_height = img_height
         self.img_width = img_width
         self.patch_size = patch_size
         self.latent_size = latent_size
@@ -36,12 +36,15 @@ class InputEmbedding(nn.Module):
 
         # Learnable class token and positional embeddings
         self.class_token = nn.Parameter(torch.randn(1, 1, latent_size))
-        self.pos_embedding = nn.Parameter(
-            torch.rand(1, self.num_patches + 1, latent_size))
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, latent_size))
 
         # Layers
         self.unfold = nn.Unfold(kernel_size=patch_size, stride=patch_size)
         self.linear = nn.Linear(self.input_size, latent_size)
+
+         # Initialize weights
+        nn.init.trunc_normal_(self.class_token, std=0.02)
+        nn.init.trunc_normal_(self.pos_embedding, std=0.02)
 
     def forward(self, x):
         """

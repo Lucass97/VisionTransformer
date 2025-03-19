@@ -1,19 +1,19 @@
 device: "cuda:0"
 
 data:
-  name: 'MNIST'
-  class_path: 'dataset.mnist_dataset.MNISTDataset'
-  base_path: "dataset/data"
-  img_height: 28
-  img_width: 28
+  name: 'Doodle'
+  class_path: 'dataset.doodle_dataset.DoodleDataset'
+  base_path: "dataset/data/doodle"
+  img_height: 254
+  img_width: 254
   n_channels: 1
-  num_classes: 10
+  num_classes: 340
 
 model:
   cnn_backbone: False
-  cnn_out_channels: 32
+  cnn_out_channels: 64
   patch_size: 2
-  latent_size: 120
+  latent_size: 480
   num_heads: 12
   num_encoders: 3
   dropout: 0.1
@@ -25,10 +25,10 @@ model_checkpoint:
 training:
   epochs: 20
   lr: 0.001
-  weight_decay: 0.0
+  weight_decay: 0.1
   batch_size: 16
 
 logger:
   base_path: './experiments'
   step: 100
-  max_grid_dim: 16
+  max_grid_dim: 8
