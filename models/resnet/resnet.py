@@ -4,9 +4,9 @@ import torch.nn.functional as F
 from models.resnet.components import ResidualBlock
 
 
-class ResNet(nn.Module):
+class ResNetBackbone(nn.Module):
     
-    def __init__(self, input_channels: int, num_blocks: list, block_channels: int, num_classes: int, dropout: float):
+    def __init__(self, input_channels: int, num_blocks: list, block_channels: int) -> None:
         """
         Initialize the ResNet model.
 
@@ -14,15 +14,11 @@ class ResNet(nn.Module):
             input_channels (int): Number of input channels in the image (e.g., 3 for RGB).
             num_blocks (list): List containing the number of residual blocks in each stage.
             block_channels (int): The number of channels in the first block.
-            num_classes (int): Number of output classes for classification.
-            dropout (float): Dropout rate to apply before the final fully connected layer.
         """
-        super(ResNet, self).__init__()
+        super(ResNetBackbone, self).__init__()
 
         self.block_channels = block_channels  # Initial number of channels
         self.num_blocks = num_blocks
-        self.num_classes = num_classes
-        self.dropout = dropout
 
         self.initial_conv = nn.Sequential(
             nn.Conv2d(input_channels, self.block_channels, kernel_size=7, stride=2, padding=3, bias=False),
@@ -53,14 +49,7 @@ class ResNet(nn.Module):
             # Update the in_channels for the next stage
             in_channels = out_channels
 
-        # Global average pooling layer
-        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
-
-        self.head = nn.Sequential(
-            nn.Flatten(),
-            nn.Dropout(dropout),
-            nn.Linear(in_channels, num_classes)  # Fully connected layer for classification
-        )
+        self.last_out_channels = in_channels
 
     def forward(self, x):
         """
@@ -79,6 +68,60 @@ class ResNet(nn.Module):
         for res_block in self.residual_stack:
             x = res_block(x)
         
-        x = self.global_pool(x)
+        return x
+
+
+class ResNetClassifier(nn.Module):
+    """
+    ResNet-based classifier model.
+
+    This model utilizes a ResNet backbone for feature extraction followed by 
+    a classification head with global average pooling and a fully connected layer.
+    """
+    
+    def __init__(self, input_channels: int, num_blocks: list, block_channels: int, num_classes: int, dropout: float = 0.0):
+        """
+        Initialize the ResNetClassifier model.
+
+        Args:
+            input_channels (int): Number of input channels in the image (e.g., 3 for RGB images).
+            num_blocks (list): List specifying the number of residual blocks in each stage of the ResNet backbone.
+            block_channels (int): Number of channels in the first block; it increases in deeper layers.
+            num_classes (int): Number of target classes for classification.
+            dropout (float): Dropout rate applied before the final classification layer.
+        """
+        super(ResNetClassifier, self).__init__()
+
+        # Initialize the ResNet backbone for feature extraction
+        self.resnet_backbone = ResNetBackbone(
+            input_channels=input_channels,
+            num_blocks=num_blocks,
+            block_channels=block_channels
+        )
         
+        self.last_out_channels = self.resnet_backbone.last_out_channels
+
+        # Global average pooling layer to reduce spatial dimensions to a single value per channel
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        # Classification head
+        self.head = nn.Sequential(
+            nn.Flatten(),
+            nn.Dropout(dropout),
+            nn.Linear(self.last_out_channels, num_classes)
+        )
+
+    def forward(self, x):
+        """
+        Perform a forward pass through the ResNet classifier.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_channels, height, width).
+
+        Returns:
+            torch.Tensor: Output tensor containing class logits of shape (batch_size, num_classes).
+        """
+        x = self.resnet_backbone(x) 
+        x = self.global_pool(x)
         return self.head(x)
+    
