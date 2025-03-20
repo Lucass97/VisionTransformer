@@ -120,8 +120,6 @@ class Trainer:
             for batch_idx, (inputs, labels) in enumerate(self.test_loader):
                 inputs, labels = inputs.to(self.cfg.device), labels.to(self.cfg.device)
 
-                n_channels, img_height, img_width = inputs.shape[1], inputs.shape[2], inputs.shape[3]
-
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
                 running_val_loss += loss.item() * inputs.size(0)
