@@ -9,7 +9,7 @@ from misc.configs import Config
 from misc.logger.logger import CustomLogger
 from misc.logger.tensorboard import TensorboardLogger
 from misc.utils.generic_utility import processing
-from misc.utils.model_utility import calculate_cnn_output_dims, reconstruct_attn_from_patches
+from misc.utils.model_utility import reconstruct_attn_from_patches
 
 from dataset.datasets import create_dataset_instance
 
@@ -67,8 +67,6 @@ class Trainer:
             
             inputs, labels = inputs.to(self.cfg.device), labels.to(self.cfg.device)
 
-            n_channels, img_height, img_width = inputs.shape[1], inputs.shape[2], inputs.shape[3]
-
             self.optimizer.zero_grad()
 
             outputs = self.model(inputs)
@@ -78,11 +76,15 @@ class Trainer:
             # Attention maps processing
             attn_maps = None
             if self.cfg.model.type == 'vit':
+                
+                img_height = self.model.input_embedder.img_height
+                img_width =self.model.input_embedder.img_width
+                
                 attn_maps = self.model.get_attention_weights()
                 attn_maps = processing(reconstruct_attn_from_patches,
                                        batch_idx, self.tensorboard_writer.step,
                                        attn_maps, (img_height, img_width),
-                                       n_channels, self.cfg.model.patch_size)
+                                       self.cfg.model.patch_size)
             
             # Compute loss and backpropagation
             loss = self.criterion(outputs, labels)
