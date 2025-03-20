@@ -12,7 +12,8 @@ class ViT(nn.Module):
     attention weights from the encoder layers.
     """
 
-    def __init__(self, input_embedder, num_encoders: int, latent_size: int, num_heads: int, num_classes: int, dropout: float) -> None:
+    def __init__(self, feature_extractor: nn.Module, input_embedder: nn.Module, num_encoders: int,
+                 latent_size: int, num_heads: int, num_classes: int, dropout: float) -> None:
         """
         Initializes the Vision Transformer model.
 
@@ -30,6 +31,8 @@ class ViT(nn.Module):
         self.latent_size = latent_size
         self.num_classes = num_classes
         self.dropout = dropout
+
+        self.feature_extractor = feature_extractor
         self.input_embedder = input_embedder
 
         self.encoder_stack = nn.ModuleList([
@@ -58,6 +61,9 @@ class ViT(nn.Module):
         Returns:
             Tensor: Classification logits.
         """
+        if self.feature_extractor:
+            x = self.feature_extractor(x)
+            
         enc_output = self.input_embedder(x)
 
         for enc_layer in self.encoder_stack:
