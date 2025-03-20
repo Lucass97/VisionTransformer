@@ -43,7 +43,7 @@ class DoodleDatasetSplitter:
         if isinstance(classes, int):
             LOGGER.info(f"Filtered by first {classes} classes.")
             grouped = self.master.groupby('word')
-            self.master = pd.concat(islice((group for _, group in grouped), 2))
+            self.master = pd.concat(islice((group for _, group in grouped), classes))
         if isinstance(classes, list):
             self.master = self.master[self.master['word'].isin(classes)]
             LOGGER.info(f"Filtered by the following classes: {classes}")
