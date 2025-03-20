@@ -132,11 +132,15 @@ class Trainer:
                 # Attention maps processing
                 attn_maps = None
                 if self.cfg.model.type == 'vit':
+                    
+                    img_height = self.model.input_embedder.img_height
+                    img_width =self.model.input_embedder.img_width
+                    
                     attn_maps = self.model.get_attention_weights()
                     attn_maps = processing(reconstruct_attn_from_patches,
-                                           batch_idx, self.tensorboard_writer.step,
-                                           attn_maps, (img_height, img_width),
-                                           n_channels, self.cfg.model.patch_size)
+                                        batch_idx, self.tensorboard_writer.step,
+                                        attn_maps, (img_height, img_width),
+                                        self.cfg.model.patch_size)
 
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)

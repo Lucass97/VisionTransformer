@@ -58,7 +58,7 @@ def reconstruct_attn_from_patches(attn_maps, img_size, patch_size):
     # Compute the mean over the patch dimension
     attn_map = attn_map.mean(dim=1)
     
-    attn_map = attn_map.view(batch_size, n_channels, grid_height, grid_width)
+    attn_map = attn_map.view(batch_size, 1, grid_height, grid_width)
     
     attn_map = F.interpolate(attn_map, size=img_size, mode='bilinear', align_corners=False)
     
