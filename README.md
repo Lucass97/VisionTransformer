@@ -77,7 +77,8 @@ Where:
 - **`--weights WEIGHTS`**: Path to the pre-trained model weights file
 
 ### Configuration
-The training process is governed by a YAML configuration file, located in the [`configs/`](configs/) directory. An example configuration is shown below:
+
+The training process is configured using a YAML file, typically located in the [`configs/`](configs/) directory. The configuration is validated using Pydantic models to ensure type correctness and constraints. Here's an example configuration file:
 
 ```yaml
 device: "cuda:0"
@@ -92,8 +93,7 @@ data:
   num_classes: 10
 
 model:
-  cnn_backbone: False
-  cnn_out_channels: 32
+  type: "vit"  # or "resnet"
   patch_size: 2
   latent_size: 120
   num_heads: 12
@@ -107,6 +107,7 @@ model_checkpoint:
 training:
   epochs: 20
   lr: 0.001
+  weight_decay: 0.0005
   batch_size: 16
 
 logger:
@@ -115,13 +116,53 @@ logger:
   max_grid_dim: 16
 ```
 
-This structure allows for flexible adjustments to model architecture, dataset selection, and training hyperparameters. You can modify the configuration to suit different datasets, model architectures, or training strategies.
+This configuration structure provides flexibility in adjusting model architecture, dataset selection, and training hyperparameters.  The system validates the configuration against predefined schemas, ensuring data integrity and preventing common errors.
 
-- **`device`**: Specifies the computing device (e.g., "cuda:0" for GPU, "cpu" for CPU execution).
-- **`data`**: Defines dataset parameters such as name, file path, image dimensions, and the number of classes.
-- **`model`**: Specifies the model architecture, including patch size, latent dimension, number of heads, encoder layers, and dropout rate.
-- **`training`**: Contains hyperparameters such as number of epochs, learning rate, and batch size.
-- **`logger`**: Configures logging settings, including log storage path and step intervals.
+**Key Configuration Sections:**
+
+* **`device`**:  Specifies the computing device.  Use "cuda:0" (or similar) for GPU execution or "cpu" for CPU execution.
+
+* **`data`**:  Defines the dataset to be used.
+    * `name`:  A descriptive name for the dataset (e.g., "MNIST").
+    * `class_path`:  The Python path to the dataset class, enabling dynamic loading.
+    * `base_path`:  The base directory where the dataset is stored.
+    * `img_height`:  The height of the input images. Must be a positive integer.
+    * `img_width`: The width of the input images. Must be a positive integer.
+    * `n_channels`: The number of color channels in the input images (e.g., 1 for grayscale, 3 for RGB). Must be greater or equal to 1.
+    * `num_classes`:  The number of distinct classes in the dataset. Must be greater or equal to 2.
+
+* **`model`**: Specifies the model architecture. This section now uses a discriminator field `type` to support different model types (ViT and ResNet).
+
+    * **`type`**:  Must be either `"vit"` for Vision Transformer or `"resnet"` for ResNet. This field determines which of the following sub-configurations is used.
+
+    * **`ViTConfig (type: "vit")`**: Parameters for Vision Transformer models.
+        * `patch_size`:  The size of the image patches to be used as input to the transformer. Must be a positive integer.
+        * `latent_size`:  The dimension of the latent space within the transformer. Must be a positive integer.
+        * `num_heads`: The number of attention heads in the multi-head attention mechanism. Must be a positive integer.
+        * `num_encoders`: The number of encoder layers in the transformer. Must be a positive integer.
+        * `dropout`:  The dropout rate to be applied during training.  A float between 0.0 and 1.0.
+        * `feature_extractor`:  (Optional) A nested `ResNetConfig` to use as a feature extractor before the transformer.
+
+    * **`ResNetConfig (type: "resnet")`**: Parameters for ResNet models.
+        * `num_blocks`: A list specifying the number of residual blocks in each layer of the ResNet.
+        * `block_channels`: The number of channels in the residual blocks.  Must be a positive integer.
+        * `dropout`: The dropout rate to be applied during training.  A float between 0.0 and 1.0.
+
+* **`model_checkpoint`**: Controls how and when model checkpoints are saved.
+    * `base_path`: The base directory where checkpoints will be stored.  The experiment name is automatically appended to this path.
+    * `save_freq`:  The frequency (in epochs) at which to save model checkpoints.
+
+* **`training`**: Defines the training hyperparameters.
+    * `epochs`:  The total number of training epochs. Must be a positive integer.
+    * `lr`:  The learning rate for the optimizer. Must be a positive float.
+    * `weight_decay`: The weight decay (L2 regularization) for the optimizer.
+    * `batch_size`:  The number of samples per batch. Must be a positive integer.
+
+* **`logger`**: Configures the logging behavior.
+    * `base_path`: The base directory where logs will be stored. The experiment name is automatically appended to this path.
+    * `step`: The frequency (in steps) at which to log training metrics. Must be a positive integer.
+    * `max_grid_dim`:  The maximum dimension of any image grids logged (for visualization). Must be a positive integer.
+
 
 ## Dataset
 
