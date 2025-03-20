@@ -1,5 +1,6 @@
+from misc.utils.model_utility import calculate_cnn_output_dims
 from models import *
-from models.resnet.resnet import ResNetClassifier
+from models.resnet.resnet import ResNetBackbone, ResNetClassifier
 from models.vit.embedder import InputEmbedding
 from models.vit.vit import ViT
 
@@ -20,23 +21,37 @@ def build_model(cfg):
 
     if cfg.model.type == 'vit':
 
-        input_embedder = InputEmbedding(cfg.data.img_height,
-                                        cfg.data.img_width,
+        feature_extractor = None
+
+        if cfg.model.feature_extractor and cfg.model.feature_extractor.type == 'resnet':
+
+            feature_extractor = ResNetBackbone(cfg.data.n_channels,
+                                               cfg.model.feature_extractor.num_blocks,
+                                               cfg.model.feature_extractor.block_channels)
+            
+            LOGGER.info(f"Feature extractor instantiated: {feature_extractor.__class__.__name__}.")
+            
+        n_channels, img_width, img_height = calculate_cnn_output_dims(feature_extractor,
+                                                                      cfg.data.n_channels,
+                                                                      cfg.data.img_height,
+                                                                      cfg.data.img_width)
+        print(n_channels, img_width, img_height)
+
+        input_embedder = InputEmbedding(img_height,
+                                        img_width,
                                         cfg.model.patch_size,
-                                        cfg.data.n_channels,
+                                        n_channels,
                                         cfg.model.latent_size).to(cfg.device)
         
-        LOGGER.info(f"Instantiating a Vision Transformer model with InputEmbedding: \
-                    {input_embedder.__class__.__name__}.")
+        LOGGER.info(f"Input embedder instantiated : {input_embedder.__class__.__name__}.")
         
-        model = ViT(input_embedder,
+        model = ViT(feature_extractor,
+                    input_embedder,
                     cfg.model.num_encoders,
                     cfg.model.latent_size,
                     cfg.model.num_heads,
                     cfg.data.num_classes,
                     cfg.model.dropout).to(cfg.device)
-        
-        LOGGER.info(f"Model instantiated: {model.__class__.__name__}")
     
     elif cfg.model.type == 'resnet':
 
@@ -45,11 +60,11 @@ def build_model(cfg):
                                  cfg.model.block_channels,
                                  cfg.data.num_classes,
                                  cfg.model.dropout).to(cfg.device)
-        
-        LOGGER.info(f"Model instantiated: {model.__class__.__name__}")
     
     else:
-        LOGGER.error(f"Invalid model type '{cfg.model.type}'. Valid options are 'vit' or 'resnet'.")
+        LOGGER.erro(f"Invalid model type '{cfg.model.type}'. Valid options are 'vit' or 'resnet'.")
         exit()
+    
+    LOGGER.info(f"Model instantiated: {model.__class__.__name__}")
     
     return model
