@@ -35,7 +35,6 @@ def build_model(cfg):
                                                                       cfg.data.n_channels,
                                                                       cfg.data.img_height,
                                                                       cfg.data.img_width)
-        print(n_channels, img_width, img_height)
 
         input_embedder = InputEmbedding(img_height,
                                         img_width,
