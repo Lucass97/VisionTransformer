@@ -1,4 +1,5 @@
 import os
+from typing import List, Literal, Optional, Union
 import yaml
 from pydantic import BaseModel, Field
 
@@ -15,14 +16,21 @@ class DataConfig(BaseModel):
     num_classes: int = Field(..., ge=2)
 
 
-class ModelConfig(BaseModel):
-    cnn_backbone: bool
-    cnn_out_channels: int = Field(..., gt=0)
+class ResNetConfig(BaseModel):
+    type: Literal["resnet"] = "resnet" 
+    num_blocks: List[int]
+    block_channels: int = Field(..., gt=0)
+    dropout: float = Field(..., ge=0.0, le=1.0)
+
+
+class ViTConfig(BaseModel):
+    type: Literal["vit"] = "vit"
     patch_size: int = Field(..., gt=0)
     latent_size: int = Field(..., gt=0)
     num_heads: int = Field(..., gt=0)
     num_encoders: int = Field(..., gt=0)
     dropout: float = Field(..., ge=0.0, le=1.0)
+    feature_extractor: Optional[ResNetConfig] = None
 
 
 class TrainingConfig(BaseModel):
@@ -31,9 +39,11 @@ class TrainingConfig(BaseModel):
     weight_decay: float
     batch_size: int = Field(..., gt=0)
 
+
 class ModelCheckpoint(BaseModel):
     base_path: str
     save_freq: int
+
 
 class LoggerConfig(BaseModel):
     base_path: str
@@ -44,7 +54,7 @@ class LoggerConfig(BaseModel):
 class Config(BaseModel):
     device: str
     data: DataConfig
-    model: ModelConfig
+    model: Union[ViTConfig, ResNetConfig] = Field(..., discriminator="type")
     model_checkpoint: ModelCheckpoint
     training: TrainingConfig
     logger: LoggerConfig

@@ -9,13 +9,17 @@ data:
   num_classes: 10
 
 model:
-  cnn_backbone: False
-  cnn_out_channels: 32
+  type: 'vit'
   patch_size: 6
   latent_size: 480
   num_heads: 12
   num_encoders: 6
   dropout: 0.1
+
+  #type: 'resnet'
+  #num_blocks: [4, 8]
+  #block_channels: 64
+  #dropout: 0.1
 
 model_checkpoint:
   base_path: './experiments'

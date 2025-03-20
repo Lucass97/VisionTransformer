@@ -1,86 +1,69 @@
-import torch.nn as nn
+from misc.utils.model_utility import calculate_cnn_output_dims
+from models import *
+from models.resnet.resnet import ResNetBackbone, ResNetClassifier
+from models.vit.embedder import InputEmbedding
+from models.vit.vit import ViT
 
-from models.components.blocks import EncoderBlock
 
+def build_model(cfg):
+    '''
+    Instantiates a model based on the configuration (`cfg.model.type`).
+    Logs the model type, input embedder, and class name for the instantiated model.
+    
+    Args:
+        cfg (Namespace): Configuration containing model settings.
+    
+    Returns:
+        object: The instantiated model (ViT or ResNet).
+    '''
+    
+    model = None
 
-class ViT(nn.Module):
-    """
-    Vision Transformer (ViT) implementation.
+    if cfg.model.type == 'vit':
 
-    This model consists of an embedding layer, multiple encoder blocks, 
-    and a classification head. It also includes a mechanism to extract 
-    attention weights from the encoder layers.
-    """
+        feature_extractor = None
 
-    def __init__(self, input_embedder, num_encoders: int, latent_size: int, num_heads: int, num_classes: int, dropout: float) -> None:
-        """
-        Initializes the Vision Transformer model.
+        if cfg.model.feature_extractor and cfg.model.feature_extractor.type == 'resnet':
 
-        Args:
-            input_embedder: Module responsible for embedding input tokens.
-            num_encoders (int): Number of encoder layers.
-            latent_size (int): Dimensionality of the latent space.
-            num_heads (int): Number of attention heads in each encoder block.
-            num_classes (int): Number of output classes for classification.
-            dropout (float): Dropout rate for regularization.
-        """
-        super(ViT, self).__init__()
+            feature_extractor = ResNetBackbone(cfg.data.n_channels,
+                                               cfg.model.feature_extractor.num_blocks,
+                                               cfg.model.feature_extractor.block_channels)
+            
+            LOGGER.info(f"Feature extractor instantiated: {feature_extractor.__class__.__name__}.")
+            
+        n_channels, img_width, img_height = calculate_cnn_output_dims(feature_extractor,
+                                                                      cfg.data.n_channels,
+                                                                      cfg.data.img_height,
+                                                                      cfg.data.img_width)
 
-        self.num_encoders = num_encoders
-        self.latent_size = latent_size
-        self.num_classes = num_classes
-        self.dropout = dropout
-        self.input_embedder = input_embedder
+        input_embedder = InputEmbedding(img_height,
+                                        img_width,
+                                        cfg.model.patch_size,
+                                        n_channels,
+                                        cfg.model.latent_size).to(cfg.device)
+        
+        LOGGER.info(f"Input embedder instantiated : {input_embedder.__class__.__name__}.")
+        
+        model = ViT(feature_extractor,
+                    input_embedder,
+                    cfg.model.num_encoders,
+                    cfg.model.latent_size,
+                    cfg.model.num_heads,
+                    cfg.data.num_classes,
+                    cfg.model.dropout).to(cfg.device)
+    
+    elif cfg.model.type == 'resnet':
 
-        self.encoder_stack = nn.ModuleList([
-            EncoderBlock(latent_size, num_heads, dropout)
-            for _ in range(num_encoders)
-        ])
-
-        self.head = nn.Sequential(
-            nn.LayerNorm(latent_size),
-            nn.Linear(latent_size, latent_size),
-            nn.GELU(),
-            nn.Dropout(dropout), 
-            nn.Linear(latent_size, num_classes),
-        )
-
-        self.attention_weights = {}
-        self.register_attention_hooks()
-
-    def forward(self, x):
-        """
-        Forward pass of the Vision Transformer.
-
-        Args:
-            x: Input tensor.
-
-        Returns:
-            Tensor: Classification logits.
-        """
-        enc_output = self.input_embedder(x)
-
-        for enc_layer in self.encoder_stack:
-            enc_output = enc_layer(enc_output)
-
-        cls_token_embed = enc_output[:, 0]
-
-        return self.head(cls_token_embed)
-
-    def register_attention_hooks(self) -> None:
-        """
-        Registers forward hooks to extract attention weights from each encoder layer.
-        """
-        for i, encoder in enumerate(self.encoder_stack):
-            def hook_fn(module, input, output, layer_idx=i) -> None:
-                self.attention_weights[layer_idx] = module.attention_weights
-            encoder.register_forward_hook(hook_fn)
-
-    def get_attention_weights(self) -> dict:
-        """
-        Returns extracted attention weights.
-
-        Returns:
-            dict: A dictionary mapping layer indices to attention weights.
-        """
-        return self.attention_weights
+        model = ResNetClassifier(cfg.data.n_channels,
+                                 cfg.model.num_blocks,
+                                 cfg.model.block_channels,
+                                 cfg.data.num_classes,
+                                 cfg.model.dropout).to(cfg.device)
+    
+    else:
+        LOGGER.erro(f"Invalid model type '{cfg.model.type}'. Valid options are 'vit' or 'resnet'.")
+        exit()
+    
+    LOGGER.info(f"Model instantiated: {model.__class__.__name__}")
+    
+    return model
