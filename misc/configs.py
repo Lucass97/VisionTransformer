@@ -1,5 +1,5 @@
 import os
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 import yaml
 from pydantic import BaseModel, Field
 
@@ -16,6 +16,13 @@ class DataConfig(BaseModel):
     num_classes: int = Field(..., ge=2)
 
 
+class ResNetConfig(BaseModel):
+    type: Literal["resnet"] = "resnet" 
+    num_blocks: List[int]
+    block_channels: int = Field(..., gt=0)
+    dropout: float = Field(..., ge=0.0, le=1.0)
+
+
 class ViTConfig(BaseModel):
     type: Literal["vit"] = "vit"
     patch_size: int = Field(..., gt=0)
@@ -23,13 +30,7 @@ class ViTConfig(BaseModel):
     num_heads: int = Field(..., gt=0)
     num_encoders: int = Field(..., gt=0)
     dropout: float = Field(..., ge=0.0, le=1.0)
-
-
-class ResNetConfig(BaseModel):
-    type: Literal["resnet"] = "resnet" 
-    num_blocks: List[int]
-    block_channels: int = Field(..., gt=0)
-    dropout: float = Field(..., ge=0.0, le=1.0)
+    feature_extractor: Optional[ResNetConfig] = None
 
 
 class TrainingConfig(BaseModel):

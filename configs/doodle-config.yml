@@ -11,6 +11,7 @@ data:
 
 model:
   #type: 'vit'
+  #backboke: 'resnet'
   #patch_size: 24
   #latent_size: 480
   #num_heads: 12
@@ -18,7 +19,7 @@ model:
   #dropout: 0.1
 
   type: 'resnet'
-  num_blocks: [4, 8]
+  num_blocks: [4, 6, 8]
   block_channels: 64
   dropout: 0.1
 

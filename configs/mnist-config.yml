@@ -16,6 +16,11 @@ model:
   num_heads: 12
   num_encoders: 3
   dropout: 0.1
+  feature_extractor:
+    type: 'resnet'
+    num_blocks: [4]
+    block_channels: 64
+    dropout: 0.1
 
   #type: 'resnet'
   #num_blocks: [4, 8]
